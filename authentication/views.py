@@ -20,26 +20,23 @@ class UserRegisterView(APIView):
         try:
             serializer = UserRegistrationSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                user = serializer.save()
+                serializer.save()
                 response = {
                     "status": True,
                     "message": "Registartion is Successfull!!",
                 }
                 return Response(data=response, status=status.HTTP_202_ACCEPTED)
             else:
-                response = {
-                    "status": False,
-                    "message": serializer.errors,
-                    "data": None
-                }
+                response = {"status": False,
+                            "message": serializer.errors,
+                            "data": None}
         except:
             response = {
-                        "status": False,
-                        "message": "Provide Credentials",
-                        "data": None,
-                    }
+                "status": False,
+                "message": "Provide Credentials",
+                "data": None,
+            }
             return Response(data=response, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 class UserLoginView(APIView):
@@ -47,6 +44,7 @@ class UserLoginView(APIView):
     If User is authenticated with email and password then only
     authentication process is done.
     """
+
     def post(self, request):
         serializer = UserLoginSeriaizers(data=request.data)
         if serializer.is_valid():
@@ -70,15 +68,17 @@ class UserLoginView(APIView):
                         "status": True,
                         "message": "Login is Successful!!",
                     }
-                    return Response(data=response, status=status.HTTP_202_ACCEPTED)
-           
+                    return Response(data=response,
+                                    status=status.HTTP_202_ACCEPTED)
+
             if user is not None and not user.is_active:
                 response = {
                     "status": False,
                     "message": "Activate user by admin",
                     "data": None,
                 }
-                return Response(data=response, status=status.HTTP_400_BAD_REQUEST)
+                return Response(data=response,
+                                status=status.HTTP_400_BAD_REQUEST)
             else:
                 response = {
                     "status": False,
@@ -88,10 +88,10 @@ class UserLoginView(APIView):
             return Response(data=response, status=status.HTTP_400_BAD_REQUEST)
         else:
             response = {
-                    "status": False,
-                    "message": "Please Provide Credentials",
-                    "data": None,
-                }
+                "status": False,
+                "message": "Please Provide Credentials",
+                "data": None,
+            }
             return Response(data=response, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -118,10 +118,9 @@ class UserChangePasswordView(APIView):
                     u.save()
                     response = {
                         "status": True,
-                        "message": "Password Changed Successfully."
+                        "message": "Password Changed Successfully.",
                     }
-                    return Response(data=response,
-                                    status=status.HTTP_200_OK)
+                    return Response(data=response, status=status.HTTP_200_OK)
                 else:
                     response = {
                         "status": False,
@@ -132,10 +131,10 @@ class UserChangePasswordView(APIView):
                                     status=status.HTTP_400_BAD_REQUEST)
         except:
             response = {
-                        "status": False,
-                        "message": "Provide username, Oldpassword and newpassword",
-                        "data": None,
-                    }
+                "status": False,
+                "message": "Provide username, Oldpassword and newpassword",
+                "data": None,
+            }
             return Response(data=response, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -161,10 +160,9 @@ class UserChangeProfileView(APIView):
                     u.save()
                     response = {
                         "status": True,
-                        "message": "First name Changed Successfully."
+                        "message": "First name Changed Successfully.",
                     }
-                    return Response(data=response,
-                                    status=status.HTTP_200_OK)
+                    return Response(data=response, status=status.HTTP_200_OK)
                 else:
                     response = {
                         "status": False,
@@ -173,12 +171,12 @@ class UserChangeProfileView(APIView):
                     }
                     return Response(data=response,
                                     status=status.HTTP_400_BAD_REQUEST)
-        except: 
+        except:
             response = {
-                        "status": False,
-                        "message": "Provide username and firstname to change",
-                        "data": None,
-                    }
+                "status": False,
+                "message": "Provide username and firstname to change",
+                "data": None,
+            }
             return Response(data=response, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -195,29 +193,26 @@ class DeleteProfileView(APIView):
         try:
             serializer = UserChangePasswordSerializer(data=request.data)
             username = request.data.get("username")
-            password = request.data.get("password")
-            print(username)
             if serializer.is_valid():
                 u = User.objects.get(username=username)
-                if u.username == username and u.password == make_password(password):
+                if u.username == username:
                     u.delete()
                     response = {
                         "status": True,
-                        "message": "User Profile Deleted Successfully!!"
+                        "message": "User Profile Deleted Successfully!!",
                     }
-                    return Response(data=response,
-                                    status=status.HTTP_200_OK)
+                    return Response(data=response, status=status.HTTP_200_OK)
                 else:
                     response = {
                         "status": False,
-                        "message": "Provide Correct Credentials."
+                        "message": "Provide Correct Credentials.",
                     }
                     return Response(data=response,
                                     status=status.HTTP_400_BAD_REQUEST)
         except:
             response = {
-                        "status": False,
-                        "message": "Provide username to delete profile",
-                        "data": None,
-                    }
+                "status": False,
+                "message": "Provide username to delete profile",
+                "data": None,
+            }
             return Response(data=response, status=status.HTTP_400_BAD_REQUEST)
