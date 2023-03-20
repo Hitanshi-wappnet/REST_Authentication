@@ -45,10 +45,9 @@ class UserLoginView(APIView):
     """
     API view for user login. User can be authenticated using email and password
     """
-
     def post(self, request):
-        # validate serializer data
-        email = request.data.get('email')
+        # Getting the detail entered by user
+        email = request.data.get("email")
         password = request.data.get("password")
         if email is None or password is None:
             response = {
@@ -59,40 +58,41 @@ class UserLoginView(APIView):
             return Response(data=response,
                             status=status.HTTP_400_BAD_REQUEST)
 
-        username = User.objects.get(email=email).username
-        data = {
-            "username": username,
-            "password": password
-        }
-        serializer = AuthTokenSerializer(data=data)
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-            # generate or get token for user
-            token, _ = Token.objects.get_or_create(user=user)
+        if User.objects.filter(email=email).exists():
+            username = User.objects.get(email=email).username
+            data = {
+                "username": username,
+                "password": password
+            }
+            serializer = AuthTokenSerializer(data=data)
+            if serializer.is_valid():
+                user = serializer.validated_data['user']
+                # generate or get token for user
+                token, _ = Token.objects.get_or_create(user=user)
 
-            # check if user is active
-            if not user.is_active:
+                # check if user is active
+                if not user.is_active:
+                    response = {
+                        "status": False,
+                        "message": "Activate user by admin",
+                        "data": None
+                    }
+                    return Response(data=response,
+                                    status=status.HTTP_400_BAD_REQUEST)
+                # Return success response
+                response = {
+                    "status": True,
+                    "message": "Login is Successful!!",
+                    "token": token.key,
+                }
+                return Response(data=response, status=status.HTTP_202_ACCEPTED)
+            else:
                 response = {
                     "status": False,
-                    "message": "Activate user by admin",
-                    "data": None
+                    "message": "Provide correct email and password",
+                    "data": None,
                 }
-                return Response(data=response,
-                                status=status.HTTP_400_BAD_REQUEST)
-            # Return success response
-            response = {
-                "status": True,
-                "message": "Login is Successful!!",
-                "token": token.key,
-            }
-            return Response(data=response, status=status.HTTP_202_ACCEPTED)
-        else:
-            response = {
-                "status": False,
-                "message": "Provide correct email and password",
-                "data": None,
-            }
-            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserChangePasswordView(APIView):
@@ -119,22 +119,22 @@ class UserChangePasswordView(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
         # Retrieve the user from the database
-        u = User.objects.get(username=username)
+        if User.objects.filter(username=username).exists():
+            u = User.objects.get(username=username)
+            # Check if the old password matches the user's password
+            if u.check_password(old_password):
+                # Set the user's new password
+                u.set_password(new_password)
 
-        # Check if the old password matches the user's password
-        if u.check_password(old_password):
-            # Set the user's new password
-            u.set_password(new_password)
+                # Save the user object with the new password
+                u.save()
 
-            # Save the user object with the new password
-            u.save()
-
-            # Return success response
-            response = {
-                "status": True,
-                "message": "Password Changed Successfully.",
-            }
-            return Response(data=response, status=status.HTTP_200_OK)
+                # Return success response
+                response = {
+                    "status": True,
+                    "message": "Password Changed Successfully.",
+                }
+                return Response(data=response, status=status.HTTP_200_OK)
         else:
             response = {
                 "status": False,
@@ -168,12 +168,8 @@ class UserChangeProfileView(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
         # Retrieving the user object using the username.
-        u = User.objects.get(username=username)
-        """
-        If the username in the request matches the username of the
-        retrieved user object, update the first name.
-        """
-        if u.username == username:
+        if User.objects.filter(username=username).exists():
+            u = User.objects.get(username=username)
             u.first_name = firstname
             u.save()
 
@@ -213,13 +209,8 @@ class DeleteProfileView(APIView):
                 }
             return Response(data=response, status=status.HTTP_400_BAD_REQUEST)
         # Retrieving the user object using the username.
-        u = User.objects.get(username=username)
-
-        """
-        If the username in the request matches the username of the
-        retrieved user object,delete the user object.
-        """
-        if u.username == username:
+        if User.objects.filter(username=username).exists():
+            u = User.objects.get(username=username)
             u.delete()
             # Return a success response.
             response = {
@@ -311,22 +302,23 @@ class UserVerifyOtpView(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
         # Get the ForgetPassword object with the given OTP
-        forget_password = ForgetPassword.objects.get(otp=new_otp)
-        user = forget_password.user
-        if user:
-            # Delete the user's old auth token and generate a new one
-            token = Token.objects.get(user=forget_password.user)
-            token.delete()
-            forget_password.delete()
-            token = Token.objects.create(user=user)
-            # Return a success response.
-            response = {
-                        "status": True,
-                        "message": "OTP Verified SuccessFully!!",
-                        "Token": token.key
-                    }
-            return Response(data=response,
-                            status=status.HTTP_200_OK)
+        if ForgetPassword.objects.filter(otp=new_otp).exists():
+            forget_password = ForgetPassword.objects.get(otp=new_otp)
+            user = forget_password.user
+            if user:
+                # Delete the user's old auth token and generate a new one
+                token = Token.objects.get(user=forget_password.user)
+                token.delete()
+                forget_password.delete()
+                token = Token.objects.create(user=user)
+                # Return a success response.
+                response = {
+                            "status": True,
+                            "message": "OTP Verified SuccessFully!!",
+                            "Token": token.key
+                        }
+                return Response(data=response,
+                                status=status.HTTP_200_OK)
         else:
             # If the OTP is incorrect, return an error message
             response = {
@@ -358,10 +350,9 @@ class UserResetPasswordView(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
         # Get the user object based on the username
-        u = User.objects.get(username=username)
+        if User.objects.filter(username=username).exists():
+            u = User.objects.get(username=username)
 
-        # Check if the user object matches the provided username
-        if str(u) == username:
             # Set the user's password to the new password and save
             u.set_password(new_password)
             u.save()
