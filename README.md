@@ -30,4 +30,11 @@ To run this files makes sure Python,Python-Django,django REST Framework and envi
 8. Test the deleteprofile API using http://127.0.0.1:8000/api/deleteprofile/ and provide username
    to delete profile.
 
-9. Make sure to perform changepassword, changeprofile and deleteprofile basic authentication is required.
+9. Make sure to perform changepassword, changeprofile and deleteprofile Token authentication is required.
+
+10. Test the Forget Password API by providing registered email id and then you received otp on
+   this email id.
+
+11. Test the Verify otp API by providing correct otp.
+
+12. Test the Reset Paasword API using resetting password for correct email id.
